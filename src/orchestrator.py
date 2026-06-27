@@ -16,6 +16,7 @@ from src.skills import (
     analysis_skill,
     coaching_skill,
     expand_race_section_skill,
+    expand_session_skill,
     next_session_skill,
     question_skill,
     race_prep_skill,
@@ -58,7 +59,7 @@ def _node_weather(state: CoachState) -> CoachState:
 
 def _node_questions(state: CoachState) -> CoachState:
     """Run question_skill and store result in state."""
-    questions = question_skill(state["activity"], state["analysis"])
+    questions = question_skill(state["activity"], state["analysis"], state["profile"])
     return {**state, "questions": questions}
 
 
@@ -155,6 +156,7 @@ def run_training_plan(
     plan_inputs: dict,
     recent_summary: dict,
     next_only: bool = False,
+    availability: dict | None = None,
 ) -> dict:
     """Generate a next-session recommendation and/or multi-week training plan.
 
@@ -163,14 +165,15 @@ def run_training_plan(
         plan_inputs: Training plan parameters from the UI form.
         recent_summary: Recent training aggregate from strava.get_recent_summary.
         next_only: If True, generate only the next-session recommendation.
+        availability: Optional weekly availability dict from the calendar.
 
     Returns:
         Dict with keys: next_session (str|None), training_plan (list|str|None).
     """
-    next_session = next_session_skill(profile, plan_inputs, recent_summary)
+    next_session = next_session_skill(profile, plan_inputs, recent_summary, availability)
     training_plan = None
     if not next_only:
-        training_plan = training_plan_skill(profile, plan_inputs, recent_summary)
+        training_plan = training_plan_skill(profile, plan_inputs, recent_summary, availability)
     return {"next_session": next_session, "training_plan": training_plan}
 
 
