@@ -1,1 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# macOS
+.DS_Store
+
+# venv
+venv/
 .env
+
+# IDE / config
+.github/
+.vscode/
+.env.example

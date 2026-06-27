@@ -16,6 +16,7 @@ class UserProfile(BaseModel):
     """Athlete profile collected via the UI questionnaire."""
 
     age: Optional[int] = None
+    ftp: Optional[int] = None
     goal: str = ""
     experience: str = ""
     injuries: str = ""
@@ -30,6 +31,8 @@ class UserProfile(BaseModel):
         parts = []
         if self.age:
             parts.append(f"Age: {self.age}")
+        if self.ftp:
+            parts.append(f"FTP: {self.ftp} W")
         if self.goal:
             parts.append(f"Goal: {self.goal}")
         if self.experience:

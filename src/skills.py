@@ -16,11 +16,12 @@ from src.profile import UserProfile, DISCLAIMER
 # ---------------------------------------------------------------------------
 
 ANALYSIS_PROMPT = (
-    "You are an endurance coach analyzing workout laps. "
-    "Identify whether this was intervals, steady-state, or recovery. "
-    "If intervals, infer the intended structure and compare to actual performance. "
+    "You are an expert cycling coach analyzing a cyclist's workout laps. "
+    "Identify whether this was intervals, threshold work, tempo, steady-state Z2, or recovery. "
+    "If power data is available, reference it in context of FTP if known (e.g. % of FTP). "
+    "Comment on cadence, power distribution, and pacing where data allows. "
     "Output observations grounded ONLY in the given data. "
-    "If a metric is missing (e.g. no power data), say so explicitly — do not invent numbers."
+    "If a metric is missing (e.g. no power meter), say so explicitly — do not invent numbers."
 )
 
 WEATHER_PROMPT = (
@@ -47,6 +48,55 @@ COACHING_PROMPT = (
     f"Always end your response with this exact disclaimer on a new line:\n\n{DISCLAIMER}"
 )
 
+NEXT_SESSION_PROMPT = (
+    "You are a data-driven cycling coach. Based on the athlete's recent training load "
+    "and stated goal, recommend ONE specific next cycling session. "
+    "Include: session type (e.g. threshold intervals, long Z2 ride), duration in minutes, "
+    "target intensity (power zones or % FTP if known, HR zones otherwise), "
+    "a brief warm-up/cool-down structure, and a short rationale. "
+    "Be specific and actionable. Stay grounded in the provided data. "
+    f"Always end with this disclaimer:\n\n{DISCLAIMER}"
+)
+
+TRAINING_PLAN_PROMPT = (
+    "You are an expert cycling coach. Create a detailed multi-week cycling training plan. "
+    "Apply these principles: progressive overload (increase load gradually week-over-week), "
+    "a recovery week every 3-4 weeks (reduce volume ~30-40%), "
+    "polarized intensity (~80% Z1-Z2, ~20% Z4-Z5), "
+    "and strictly respect the athlete's available training time. "
+    "Return ONLY a valid JSON array — no markdown fences, no extra text. "
+    "Each element is one week with this exact structure: "
+    '{"week_num": 1, "focus": "Base endurance", "total_hours": 6.0, '
+    '"sessions": [{"day": "Monday", "type": "Recovery ride", '
+    '"duration_min": 45, "intensity": "Zone 1-2"}], '
+    '"recovery_days": ["Thursday", "Sunday"]}. '
+    "Use full day names (Monday, Tuesday, etc.). "
+    "All sessions must be cycling-specific. Never invent metrics not provided."
+)
+
+RACE_PREP_PROMPT = (
+    "You are an expert cycling coach preparing an athlete for a target event. "
+    "Create a HIGH-LEVEL race preparation plan organized into phases: "
+    "1) Base (aerobic foundation), 2) Build (intensity and specificity), "
+    "3) Peak (race-specific sharpening), 4) Taper (fatigue reduction). "
+    "For each phase provide: phase name, duration in weeks, key training focus, "
+    "and 2-3 example session types per week. "
+    "Keep it strategic and concise — this is an overview, not a day-by-day schedule. "
+    "The athlete can ask follow-up questions to expand any phase. "
+    "Stay cycling-specific (power zones, FTP percentages, interval types). "
+    f"Always end with this disclaimer:\n\n{DISCLAIMER}"
+)
+
+RACE_EXPAND_PROMPT = (
+    "You are an expert cycling coach. The athlete has a high-level race preparation plan "
+    "and is asking for more detail on a specific section. "
+    "Expand ONLY the section relevant to their question — provide specific workouts, "
+    "durations, intensity targets (power zones / % FTP), recovery guidance, and rationale. "
+    "Keep the rest of the plan at a high level. "
+    "Stay grounded in what the athlete told you. Do not invent metrics. "
+    f"Always end with this disclaimer:\n\n{DISCLAIMER}"
+)
+
 
 def _llm() -> ChatOpenAI:
     """Return a configured ChatOpenAI instance.
@@ -55,7 +105,8 @@ def _llm() -> ChatOpenAI:
     """
     model = os.getenv("OPENAI_MODEL", "openai.eu.gpt-4.1-mini-2025-04-14")
     base_url = os.getenv("OPENAI_BASE_URL")
-    kwargs = {"model": model, "temperature": 0.3}
+    temperature = float(os.getenv("LLM_TEMPERATURE", "0.4"))
+    kwargs = {"model": model, "temperature": temperature}
     if base_url:
         kwargs["base_url"] = base_url
     return ChatOpenAI(**kwargs)
@@ -290,3 +341,172 @@ def _parse_sections(text: str, section_names: list[str]) -> list[str]:
         content = text[start + len(start_key):end].strip().lstrip(":").strip()
         results.append(content)
     return results
+
+
+# ---------------------------------------------------------------------------
+# Training plan & race prep skills
+# ---------------------------------------------------------------------------
+
+def next_session_skill(
+    profile: UserProfile,
+    plan_inputs: dict,
+    recent_summary: dict,
+) -> str:
+    """Recommend ONE specific next cycling session.
+
+    Args:
+        profile: Athlete's UserProfile.
+        plan_inputs: Dict with goal, experience, hours_per_day, etc.
+        recent_summary: Recent training aggregate from get_recent_summary.
+
+    Returns:
+        Text description of the recommended next session.
+    """
+    user_msg = _build_plan_context(profile, plan_inputs, recent_summary)
+    user_msg += "\n\nRecommend ONE specific next cycling session for this athlete."
+    return _chat(NEXT_SESSION_PROMPT, user_msg)
+
+
+def training_plan_skill(
+    profile: UserProfile,
+    plan_inputs: dict,
+    recent_summary: dict,
+) -> "list[dict] | str":
+    """Generate a structured multi-week cycling training plan.
+
+    Args:
+        profile: Athlete's UserProfile.
+        plan_inputs: Dict with keys: days_per_week (int), hours_per_day (float),
+            goal (str), experience (str), sleep_hours (float), injuries (str),
+            weeks (int).
+        recent_summary: Recent training aggregate from get_recent_summary.
+
+    Returns:
+        Parsed list of weekly plan dicts if JSON is valid, else raw text string.
+    """
+    user_msg = _build_plan_context(profile, plan_inputs, recent_summary)
+    user_msg += (
+        f"\n\nGenerate a {plan_inputs.get('weeks', 4)}-week cycling training plan "
+        "as a JSON array following the specified structure. Return ONLY the JSON array."
+    )
+    response = _chat(TRAINING_PLAN_PROMPT, user_msg)
+    try:
+        cleaned = response.strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("```", 2)[1]
+            if cleaned.startswith("json"):
+                cleaned = cleaned[4:]
+            cleaned = cleaned.rsplit("```", 1)[0].strip()
+        plan = json.loads(cleaned)
+        if isinstance(plan, list):
+            return plan
+    except (json.JSONDecodeError, ValueError):
+        pass
+    return response
+
+
+def race_prep_skill(profile: UserProfile, race_inputs: dict) -> str:
+    """Generate a high-level cycling race preparation plan.
+
+    Args:
+        profile: Athlete's UserProfile.
+        race_inputs: Dict with keys: race_type (str), race_date (str),
+            distance_km (float), elevation_m (int), weekly_hours (float),
+            goal (str), current_fitness (str).
+
+    Returns:
+        High-level phased race prep plan as text.
+    """
+    weeks_out = _weeks_until(race_inputs.get("race_date", ""))
+    user_msg = (
+        f"Athlete profile:\n{profile.to_context()}\n\n"
+        f"Race type: {race_inputs.get('race_type')}\n"
+        f"Race date: {race_inputs.get('race_date')} ({weeks_out} weeks away)\n"
+        f"Distance: {race_inputs.get('distance_km')} km, "
+        f"Elevation: {race_inputs.get('elevation_m')} m\n"
+        f"Available weekly training hours: {race_inputs.get('weekly_hours')}\n"
+        f"Current fitness: {race_inputs.get('current_fitness')}\n"
+        f"Goal: {race_inputs.get('goal')}\n\n"
+        "Generate a high-level race preparation plan."
+    )
+    return _chat(RACE_PREP_PROMPT, user_msg)
+
+
+def expand_race_section_skill(current_plan: str, user_question: str) -> str:
+    """Expand a specific section of a race prep plan based on athlete follow-up.
+
+    Args:
+        current_plan: The existing high-level race prep plan text.
+        user_question: The athlete's follow-up question or expansion request.
+
+    Returns:
+        Expanded section text with detail added to the relevant phase.
+    """
+    user_msg = (
+        f"Current plan:\n{current_plan}\n\n"
+        f"Athlete question: {user_question}\n\n"
+        "Expand the relevant section in detail."
+    )
+    return _chat(RACE_EXPAND_PROMPT, user_msg)
+
+
+# ---------------------------------------------------------------------------
+# Private helpers
+# ---------------------------------------------------------------------------
+
+def _build_plan_context(
+    profile: UserProfile,
+    plan_inputs: dict,
+    recent_summary: dict,
+) -> str:
+    """Build a formatted user message string for training plan skills.
+
+    Args:
+        profile: Athlete's UserProfile.
+        plan_inputs: Training plan input parameters from the UI form.
+        recent_summary: Recent training aggregate stats.
+
+    Returns:
+        Formatted multi-line string ready for an LLM prompt.
+    """
+    lines = [
+        f"Athlete profile:\n{profile.to_context()}",
+        f"Goal: {plan_inputs.get('goal', 'Not specified')}",
+        f"Current fitness / experience: {plan_inputs.get('experience', 'Not specified')}",
+        f"Training days per week: {plan_inputs.get('days_per_week', 4)}",
+        f"Hours available per training day: {plan_inputs.get('hours_per_day', 1.5)}",
+        f"Plan length: {plan_inputs.get('weeks', 4)} weeks",
+        f"Average sleep: {plan_inputs.get('sleep_hours', 7.5)} hours/night",
+    ]
+    if plan_inputs.get("injuries"):
+        lines.append(f"Injuries / limitations: {plan_inputs['injuries']}")
+    if recent_summary and recent_summary.get("num_rides", 0) > 0:
+        lines.append(
+            f"\nRecent {recent_summary.get('days', 14)}-day training summary: "
+            f"{recent_summary['num_rides']} rides, "
+            f"{recent_summary['total_hours']} hours, "
+            f"{recent_summary['total_distance_km']} km, "
+            f"avg power: {recent_summary.get('avg_power') or 'N/A'} W, "
+            f"{recent_summary['num_hard_sessions']} hard sessions."
+        )
+    return "\n".join(lines)
+
+
+def _weeks_until(race_date_str: str) -> int:
+    """Calculate whole weeks from today until a race date.
+
+    Args:
+        race_date_str: ISO date string (YYYY-MM-DD).
+
+    Returns:
+        Number of whole weeks remaining, or 0 if date is invalid or past.
+    """
+    if not race_date_str:
+        return 0
+    try:
+        from datetime import date
+        race = date.fromisoformat(race_date_str)
+        delta = (race - date.today()).days
+        return max(0, delta // 7)
+    except ValueError:
+        return 0
