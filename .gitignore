@@ -13,4 +13,3 @@ venv/
 # IDE / config
 .github/
 .vscode/
-.env.example
