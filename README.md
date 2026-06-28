@@ -192,5 +192,3 @@ scripts/
 > ⚠️ This tool is AI-generated and for **informational purposes only**. It is **NOT medical advice**. Always consult a qualified coach or healthcare professional — especially if you have any health conditions — before making changes to your training.
 
 ---
-
-*Built for the ETH Agentic Systems Lab — AI Founder Track application.*
