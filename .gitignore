@@ -11,5 +11,5 @@ venv/
 .env
 
 # IDE / config
-.github/
+# .github/ is tracked — contains workflows, prompts, PR templates
 .vscode/
