@@ -16,3 +16,4 @@
 - testing-agent → writes/fixes tests
 - refactor-agent → restructures code safely
 - docs-agent → writes documentation
+- prompt-engineer-agent → designs, critiques, and improves LLM prompts (analysis, plan, race prep)
