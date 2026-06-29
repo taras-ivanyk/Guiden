@@ -1,7 +1,7 @@
 # Copilot Instructions
 
 ## Project
-AI cycling coach (currently Streamlit, migrating to React).
+AI cycling coach — React + Vite frontend, FastAPI backend, Strava OAuth, OpenAI skills.
 
 ## Branch Strategy
 - main = production, protected, no direct commits
