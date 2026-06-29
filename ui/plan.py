@@ -77,20 +77,48 @@ def render(profile: UserProfile) -> None:
             )
 
     if gen_plan or gen_next:
+        if not availability:
+            st.warning(
+                "\u26a0\ufe0f No training days selected. "
+                "Use the calendar above to add at least one day before generating a plan."
+            )
+            st.stop()
+
+        # Build ordered calendar list \u2014 single source of truth for days + time windows
+        _CAL_ORDER = [
+            "Monday", "Tuesday", "Wednesday", "Thursday",
+            "Friday", "Saturday", "Sunday",
+        ]
+        _calendar_list: list[dict] = []
+        for _d in _CAL_ORDER:
+            _v = availability.get(_d)
+            if _v and isinstance(_v, dict):
+                _dur = _v.get("duration_min")
+                if not _dur:
+                    _sh, _sm = map(int, _v["start"].split(":"))
+                    _eh, _em = map(int, _v["end"].split(":"))
+                    _dur = (_eh * 60 + _em) - (_sh * 60 + _sm)
+                _calendar_list.append(
+                    {"day": _d, "start": _v["start"], "end": _v["end"], "duration_min": _dur}
+                )
+
         plan_inputs = {
-            "days_per_week": int(days_per_week),
-            "hours_per_day": float(hours_per_day),
+            "calendar": _calendar_list,
             "goal": plan_goal,
             "experience": plan_exp,
             "sleep_hours": float(sleep_hours),
             "injuries": plan_injuries or (profile.injuries or ""),
             "weeks": int(weeks),
         }
-        with st.spinner("Fetching recent training data…"):
-            try:
-                recent_summary = get_recent_summary(days=14)
-            except Exception:
-                recent_summary = {}
+        if st.session_state.get("demo_mode"):
+            from mock.mock_data import get_mock_recent_summary
+            recent_summary = get_mock_recent_summary()
+        else:
+            with st.spinner("Fetching recent training data…"):
+                try:
+                    recent_summary = get_recent_summary(days=14)
+                except Exception:
+                    recent_summary = {}
 
         if gen_next:
             with st.spinner("Generating next session recommendation…"):

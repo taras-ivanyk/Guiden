@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from src.profile import UserProfile, DISCLAIMER
+from src.profile import DISCLAIMER
 from src.llm import get_session_usage
 
 # ── CSS ───────────────────────────────────────────────────────────────────────
@@ -65,63 +65,33 @@ def render_sport_selector() -> None:
         st.button("🏊 Swimming — coming soon", disabled=True, use_container_width=True)
 
 
-def render_sidebar_profile() -> tuple[UserProfile, str]:
-    """Render sidebar navigation and profile form.
+def render_sidebar_profile() -> str:
+    """Render sidebar navigation.
 
     Returns:
-        Tuple of (UserProfile, selected_mode_string).
+        Selected navigation mode string.
     """
+    from ui.strava_auth import render_auth_status
     with st.sidebar:
-        st.title("🚴 AI Cycling Coach")
+        st.title("🚴 Guiden")
         st.divider()
 
         mode = st.radio(
             "Navigate",
-            ["🏠 Home", "🔍 Analyze Workout", "📅 Training Plan", "🏁 Race Prep ✦ beta"],
+            ["🏠 Home", "🔍 Analyze Workout", "📅 Training Plan", "👤 Profile"],
             label_visibility="collapsed",
         )
+        st.toggle(
+            "🎭 Demo mode",
+            key="demo_mode",
+            help="Pre-loaded mock Strava activity — no account needed.",
+        )
         st.divider()
-
-        st.subheader("Your Profile")
-        age = st.number_input("Age", min_value=10, max_value=100, value=30, step=1)
-        ftp = st.number_input(
-            "FTP (W)",
-            min_value=0,
-            max_value=600,
-            value=0,
-            step=5,
-            help="Functional Threshold Power — leave 0 if unknown",
-        )
-        goal = st.text_input("Primary goal", placeholder="e.g. Improve FTP, build base")
-        experience = st.selectbox(
-            "Experience level",
-            ["Beginner", "Intermediate", "Advanced", "Elite"],
-            index=1,
-        )
-        injuries = st.text_area(
-            "Injuries / health conditions",
-            placeholder="e.g. Heart condition, back pain — be specific",
-            height=68,
-        )
-        notes = st.text_area(
-            "Other notes",
-            placeholder="e.g. Typically train 6h/week",
-            height=60,
-        )
-
-        profile = UserProfile(
-            age=int(age),
-            ftp=int(ftp) if ftp else None,
-            goal=goal,
-            experience=experience,
-            injuries=injuries,
-            notes=notes,
-        )
-
+        render_auth_status()
         st.divider()
         render_disclaimer()
 
-    return profile, mode
+    return mode
 
 
 def render_token_counter() -> None:

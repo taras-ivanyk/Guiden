@@ -1,4 +1,4 @@
-# Skills Reference — AI Cycling Coach
+# Skills Reference — Guiden
 
 All skills live in `src/skills/`. Each is a single Python file with one primary public function. Every skill routes its LLM call through `src/llm.chat()` for automatic token logging, cost tracking, and budget enforcement.
 

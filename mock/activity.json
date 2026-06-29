@@ -1,0 +1,56 @@
+{
+  "id": "demo_threshold_001",
+  "name": "Morning Threshold Intervals \u2014 Demo",
+  "type": "Ride",
+  "date": "2026-06-25",
+  "distance_km": 62.4,
+  "moving_time_min": 138.0,
+  "avg_hr": 152,
+  "max_hr": 178,
+  "avg_watts": 218,
+  "start_latlng": [47.3769, 8.5417],
+  "total_elevation_gain": 640,
+  "description": "3\u00d720 min threshold blocks. Strong reps 1\u20132, clear fade on rep 3. Night before: poor sleep (~5 h). First hard session after 5-day taper.",
+  "laps": [
+    {
+      "lap_num": 1,
+      "distance_km": 12.1,
+      "time_min": 25.2,
+      "avg_watts": 185,
+      "avg_hr": 141,
+      "avg_speed_kmh": 28.8
+    },
+    {
+      "lap_num": 2,
+      "distance_km": 10.8,
+      "time_min": 20.4,
+      "avg_watts": 268,
+      "avg_hr": 167,
+      "avg_speed_kmh": 31.7
+    },
+    {
+      "lap_num": 3,
+      "distance_km": 10.8,
+      "time_min": 20.4,
+      "avg_watts": 261,
+      "avg_hr": 169,
+      "avg_speed_kmh": 31.8
+    },
+    {
+      "lap_num": 4,
+      "distance_km": 10.8,
+      "time_min": 21.2,
+      "avg_watts": 238,
+      "avg_hr": 165,
+      "avg_speed_kmh": 30.6
+    },
+    {
+      "lap_num": 5,
+      "distance_km": 17.9,
+      "time_min": 50.8,
+      "avg_watts": 191,
+      "avg_hr": 144,
+      "avg_speed_kmh": 21.1
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-# 🚴 AI Cycling Coach
+# 🚴 Guiden
 
 **Your data-driven personal cycling coach — powered by Strava & OpenAI**
 
@@ -53,7 +53,7 @@ An agentic AI coach that orchestrates multiple specialised skills — analysis, 
 ### 1. Clone and create environment
 ```bash
 git clone <repo-url>
-cd ai-cycling-coach
+cd guiden
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt

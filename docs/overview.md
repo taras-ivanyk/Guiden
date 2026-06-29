@@ -1,8 +1,8 @@
-# App Overview — AI Cycling Coach
+# App Overview — Guiden
 
 ## What it does
 
-AI Cycling Coach is an **agentic coaching system** that connects to your Strava account, pulls real workout data, and produces grounded coaching analysis, training plans, and race preparation — without hallucinating numbers.
+Guiden is an **agentic coaching system** that connects to your Strava account, pulls real workout data, and produces grounded coaching analysis, training plans, and race preparation — without hallucinating numbers.
 
 The key word is **agentic**: instead of sending everything to one big prompt, the system orchestrates a pipeline of specialised skills that each do one thing well, can be tested independently, and produce output explicitly grounded in real data.
 
