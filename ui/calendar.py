@@ -167,7 +167,7 @@ def render_calendar() -> dict[str, dict[str, str]]:
                 dur = v.get("duration_min") or _compute_duration_min(v["start"], v["end"])
                 h, m = divmod(dur, 60)
                 dur_str = f"{h}h" + (f" {m}min" if m else "")
-                summary_parts.append(f"{day} {v['start']}\u2013{v['end']} *({dur_str})*")
+                summary_parts.append(f"{day} {v['start']}\u2013{v['end']} ({dur_str})")
         st.markdown(" &nbsp;|&nbsp; ".join(summary_parts))
     else:
         st.markdown("---")
