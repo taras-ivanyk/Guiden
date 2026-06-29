@@ -49,10 +49,3 @@ def render() -> None:
             "Pick **Analyze Workout** or **Training Plan** from the sidebar.",
             icon="✅",
         )
-            | Race Prep | Phases your training toward a target event |
-
-            Every output is grounded in your actual data — the coach never invents numbers.
-            """
-        )
-
-    render_disclaimer()
