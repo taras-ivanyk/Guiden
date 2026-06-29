@@ -71,6 +71,7 @@ def render_sidebar_profile() -> str:
     Returns:
         Selected navigation mode string.
     """
+    from ui.strava_auth import render_auth_status
     with st.sidebar:
         st.title("🚴 Guiden")
         st.divider()
@@ -85,6 +86,8 @@ def render_sidebar_profile() -> str:
             key="demo_mode",
             help="Pre-loaded mock Strava activity — no account needed.",
         )
+        st.divider()
+        render_auth_status()
         st.divider()
         render_disclaimer()
 

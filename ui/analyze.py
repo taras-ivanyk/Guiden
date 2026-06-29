@@ -10,6 +10,7 @@ from src.profile import UserProfile
 from src.skills import analysis_skill, weather_skill, question_skill, coaching_skill
 from src.skills.base import safety_warning
 from ui.components import render_disclaimer
+from ui.strava_auth import is_strava_connected, render_connect_button
 
 
 def render(profile: UserProfile) -> None:
@@ -40,7 +41,6 @@ def render(profile: UserProfile) -> None:
                 help="0 = no limit",
             )
 
-    # ── Load activities ────────────────────────────────────────────────────────
     # ── Demo pre-load or Strava fetch ─────────────────────────────────────────
     if st.session_state.get("demo_mode"):
         if not st.session_state.activities:
@@ -54,6 +54,12 @@ def render(profile: UserProfile) -> None:
             "🎭 **Demo mode** — mock Strava activity pre-loaded. "
             "Toggle off in the sidebar to use real data."
         )
+    elif not is_strava_connected():
+        st.info(
+            "🔗 Connect your Strava account to load real workouts.",
+            icon="🚴",
+        )
+        render_connect_button()
     else:
         if st.button("🔄 Load cycling activities", type="primary"):
             with st.spinner("Fetching activities from Strava…"):

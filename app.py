@@ -9,6 +9,7 @@ load_dotenv()
 
 from ui.components import inject_css, render_sidebar_profile, render_token_counter, render_sport_selector
 from ui import home, analyze, plan, profile_page
+from ui.strava_auth import handle_oauth_callback
 from src.profile import UserProfile
 
 # ── Page config ───────────────────────────────────────────────────────────────
@@ -18,6 +19,10 @@ st.set_page_config(
     layout="wide",
 )
 inject_css()
+
+# ── OAuth callback ───────────────────────────────────────────────────────────────────────────
+# Must run before any UI so it catches ?code= on the redirect page-load.
+handle_oauth_callback()
 
 # ── Session state defaults ────────────────────────────────────────────────────
 _DEFAULTS: dict = {
