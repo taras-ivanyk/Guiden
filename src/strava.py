@@ -1,6 +1,7 @@
 """Strava API client for the AI Endurance Coach."""
 
 import os
+import time
 from datetime import datetime, timedelta, date, time as _time
 from typing import Optional
 
@@ -20,24 +21,20 @@ CYCLING_SPORT_TYPES = {
 }
 
 
-def _get_token() -> str:
-    """Refresh and return a valid Strava access token.
+def _do_token_refresh(refresh_token: str, client_id: str, client_secret: str) -> dict:
+    """Exchange a refresh token for a fresh Strava token bundle.
+
+    Args:
+        refresh_token: Current Strava refresh token.
+        client_id: Strava app client ID.
+        client_secret: Strava app client secret.
+
+    Returns:
+        Full token response dict (access_token, refresh_token, expires_at, ...).
 
     Raises:
-        EnvironmentError: If required env vars are missing.
-        RuntimeError: If the token refresh fails.
+        RuntimeError: If the refresh request fails.
     """
-    from src.config import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN
-    client_id = STRAVA_CLIENT_ID or os.getenv("STRAVA_CLIENT_ID")
-    client_secret = STRAVA_CLIENT_SECRET or os.getenv("STRAVA_CLIENT_SECRET")
-    refresh_token = STRAVA_REFRESH_TOKEN or os.getenv("STRAVA_REFRESH_TOKEN")
-
-    if not all([client_id, client_secret, refresh_token]):
-        raise EnvironmentError(
-            "Missing STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, or STRAVA_REFRESH_TOKEN in .env"
-        )
-
-    logger.info("[strava] Refreshing access token")
     resp = requests.post(
         "https://www.strava.com/oauth/token",
         data={
@@ -48,14 +45,59 @@ def _get_token() -> str:
         },
         timeout=10,
     )
-
     if resp.status_code != 200:
         raise RuntimeError(f"Token refresh failed ({resp.status_code}): {resp.text}")
+    data = resp.json()
+    if not data.get("access_token"):
+        raise RuntimeError("No access_token in Strava refresh response.")
+    return data
 
-    token = resp.json().get("access_token")
-    if not token:
-        raise RuntimeError("No access_token in Strava response.")
-    return token
+
+def _get_token() -> str:
+    """Return a valid Strava access token.
+
+    Priority order:
+      1. Streamlit session state (``strava_tokens``) — set after UI OAuth flow.
+         Automatically refreshes if the access token has expired.
+      2. Environment variables / .env — developer / legacy fallback.
+
+    Raises:
+        EnvironmentError: If no credentials are available.
+        RuntimeError: If token refresh fails.
+    """
+    from src.config import STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN
+    client_id = STRAVA_CLIENT_ID or os.getenv("STRAVA_CLIENT_ID", "")
+    client_secret = STRAVA_CLIENT_SECRET or os.getenv("STRAVA_CLIENT_SECRET", "")
+
+    # ── 1. Session-stored tokens (UI OAuth flow) ─────────────────────────────
+    try:
+        import streamlit as st
+        tokens = st.session_state.get("strava_tokens")
+        if tokens and isinstance(tokens, dict):
+            if tokens.get("expires_at", 0) > time.time() + 60:
+                logger.debug("[strava] Using session access token (valid)")
+                return tokens["access_token"]
+            # Access token expired — use stored refresh token
+            session_refresh = tokens.get("refresh_token")
+            if session_refresh and client_id and client_secret:
+                logger.info("[strava] Session token expired — auto-refreshing")
+                new_tokens = _do_token_refresh(session_refresh, client_id, client_secret)
+                st.session_state["strava_tokens"] = {**tokens, **new_tokens}
+                return new_tokens["access_token"]
+    except Exception:
+        pass  # Not in a Streamlit context, or session read failed
+
+    # ── 2. Fallback: .env refresh token ─────────────────────────────────────
+    refresh_token = STRAVA_REFRESH_TOKEN or os.getenv("STRAVA_REFRESH_TOKEN", "")
+    if not all([client_id, client_secret, refresh_token]):
+        raise EnvironmentError(
+            "Not connected to Strava. "
+            "Click \u2018Connect with Strava\u2019 in the sidebar, "
+            "or set STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET, STRAVA_REFRESH_TOKEN in .env"
+        )
+    logger.info("[strava] Using .env refresh token")
+    env_tokens = _do_token_refresh(refresh_token, client_id, client_secret)
+    return env_tokens["access_token"]
 
 
 def _headers() -> dict:
@@ -316,4 +358,69 @@ def get_recent_summary(days: int = 14) -> dict:
         "num_rides": len(recent),
         "total_distance_km": round(total_km, 1),
         "days": days,
+    }
+
+
+# ── OAuth helpers ─────────────────────────────────────────────────────────────
+
+def exchange_code_for_tokens(code: str, client_id: str, client_secret: str) -> dict:
+    """Exchange a one-time OAuth authorisation code for a full token bundle.
+
+    Called once after the user approves the Strava OAuth consent screen and
+    Strava redirects back with ``?code=<value>`` in the URL.
+
+    Args:
+        code: The one-time code from the ``?code=`` query parameter.
+        client_id: Strava app client ID.
+        client_secret: Strava app client secret.
+
+    Returns:
+        Dict with access_token, refresh_token, expires_at, and athlete sub-dict.
+
+    Raises:
+        RuntimeError: If the exchange request fails.
+    """
+    logger.info("[strava] Exchanging OAuth code for tokens")
+    resp = requests.post(
+        "https://www.strava.com/oauth/token",
+        data={
+            "client_id": client_id,
+            "client_secret": client_secret,
+            "code": code,
+            "grant_type": "authorization_code",
+        },
+        timeout=10,
+    )
+    if resp.status_code != 200:
+        raise RuntimeError(f"Code exchange failed ({resp.status_code}): {resp.text}")
+    data = resp.json()
+    if not data.get("access_token"):
+        raise RuntimeError("No access_token in Strava code-exchange response.")
+    return data
+
+
+def get_athlete_info(access_token: str) -> dict:
+    """Fetch basic profile information for the authenticated athlete.
+
+    Args:
+        access_token: Valid Strava access token.
+
+    Returns:
+        Dict with id, firstname, lastname, profile (photo URL).
+        Returns an empty dict if the request fails.
+    """
+    resp = requests.get(
+        f"{STRAVA_BASE}/athlete",
+        headers={"Authorization": f"Bearer {access_token}"},
+        timeout=10,
+    )
+    if resp.status_code != 200:
+        logger.warning(f"[strava] get_athlete_info failed ({resp.status_code})")
+        return {}
+    data = resp.json()
+    return {
+        "id": data.get("id"),
+        "firstname": data.get("firstname", ""),
+        "lastname": data.get("lastname", ""),
+        "profile": data.get("profile_medium") or data.get("profile", ""),
     }
