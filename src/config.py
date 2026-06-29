@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # ── OpenAI ──────────────────────────────────────────────────────────────────
-OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "openai.global.gpt-4o-mini")
 OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL") or None
 LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.4"))
 MAX_OUTPUT_TOKENS: int = int(os.getenv("MAX_OUTPUT_TOKENS", "1500"))
