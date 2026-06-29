@@ -77,7 +77,13 @@ Required variables:
 | `OPENAI_BASE_URL` | Optional — custom proxy base URL |
 | `STRAVA_CLIENT_ID` | From strava.com/settings/api |
 | `STRAVA_CLIENT_SECRET` | From strava.com/settings/api |
-| `JWT_SECRET` | Any random string ≥ 32 chars (`openssl rand -hex 32`) |
+| `JWT_SECRET` | Random secret used to sign auth tokens |
+
+Generate `JWT_SECRET` with:
+```bash
+openssl rand -hex 32
+```
+Paste the output into your `.env`. Keep it secret — changing it invalidates all active sessions.
 
 ### 3. Run
 
