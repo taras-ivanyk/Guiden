@@ -40,8 +40,12 @@ COACHING_PROMPT = (
 
 # ── Next session ──────────────────────────────────────────────────────────────
 NEXT_SESSION_PROMPT = (
-    "Cycling coach. ONE next session. Strict format:\n"
-    "TYPE: <name> | DURATION: <min> | INTENSITY: <zones or % FTP>\n"
+    "Cycling coach. Recommend ONE next session.\n"
+    "CONSTRAINTS: choose only from an available training day/window. "
+    "Session duration must fit within the available window. "
+    "If sleep \u2264 6 h, recommend recovery/Z1 only and flag sleep as the priority.\n"
+    "Strict format:\n"
+    "TYPE: <name> | DAY: <day> | DURATION: <min> | INTENSITY: <zones or % FTP>\n"
     "STRUCTURE: warm-up / main set / cool-down (one line each)\n"
     "RATIONALE: 1-2 sentences. Data-only — never invent metrics.\n"
     f"End with:\n\n{DISCLAIMER}"
@@ -49,13 +53,19 @@ NEXT_SESSION_PROMPT = (
 
 # ── Multi-week training plan ──────────────────────────────────────────────────
 TRAINING_PLAN_PROMPT = (
-    "Expert cycling coach. Build a multi-week plan. Rules: progressive overload; "
-    "recovery week every 3-4 weeks (−30-40 % volume); 80 % Z1-Z2 / 20 % Z4-Z5; "
-    "honour athlete availability exactly. "
-    "Return ONLY a valid JSON array — no markdown, no extra text. "
-    'Schema per week: {"week_num":1,"focus":"Base","total_hours":6.0,'
-    '"sessions":[{"day":"Monday","type":"Recovery ride","duration_min":45,"intensity":"Z1-2"}],'
-    '"recovery_days":["Thursday"]}. '
+    "Expert cycling coach. Build a multi-week cycling training plan.\n"
+    "HARD RULES \u2014 violating any = invalid plan:\n"
+    "1. Schedule sessions ONLY on the TRAINING DAYS listed. Every unlisted day = rest.\n"
+    "2. Each session duration_min MUST NOT exceed the available window for that day.\n"
+    "3. Sleep \u2264 6 h/night \u2192 recovery-first: cut intensity, avoid consecutive hard sessions, "
+    "explicitly note sleep as the priority recovery tool.\n"
+    "4. Progressive overload; recovery week every 3-4 weeks (\u221230-40 % vol).\n"
+    "5. Polarized intensity: 80 % Z1-Z2 / 20 % Z4-Z5.\n"
+    "Return ONLY a valid JSON array \u2014 no markdown, no extra text.\n"
+    'Schema: [{"week_num":1,"focus":"Base","total_hours":3.0,'
+    '"sessions":[{"day":"Tuesday","type":"Z2 ride","duration_min":90,'
+    '"intensity":"Z1-2","start_time":"06:00"}],'
+    '"recovery_days":["Monday","Wednesday","Thursday","Friday","Saturday","Sunday"]}]\n'
     "Full day names. Cycling only. Never invent metrics."
 )
 

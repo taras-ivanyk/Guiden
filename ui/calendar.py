@@ -15,6 +15,13 @@ _DEFAULT_START = "07:00"
 _DEFAULT_END = "09:00"
 
 
+def _compute_duration_min(start: str, end: str) -> int:
+    """Return training window length in minutes from HH:MM strings."""
+    sh, sm = map(int, start.split(":"))
+    eh, em = map(int, end.split(":"))
+    return (eh * 60 + em) - (sh * 60 + sm)
+
+
 def _tile_label(day: str, abbr: str, availability: dict[str, dict[str, str]]) -> str:
     """Build the markdown label shown inside a day tile.
 
@@ -24,12 +31,14 @@ def _tile_label(day: str, abbr: str, availability: dict[str, dict[str, str]]) ->
         availability: Current saved availability dict.
 
     Returns:
-        Markdown string with day name and time window (or '—' if unset).
+        Markdown string with day name, time window, and duration (or '\u2014' if unset).
     """
     entry = availability.get(day)
     if entry:
-        window = f"{entry['start']} – {entry['end']}"
-        return f"**{abbr}**  \n🟢 {window}"
+        dur = entry.get("duration_min") or _compute_duration_min(entry["start"], entry["end"])
+        h, m = divmod(dur, 60)
+        dur_str = f"{h}h" + (f" {m}min" if m else "")
+        return f"**{abbr}**  \n\U0001f7e2 {entry['start']}\u2013{entry['end']}  \n*{dur_str}*"
     return f"**{abbr}**  \n—"
 
 
@@ -130,7 +139,11 @@ def render_calendar() -> dict[str, dict[str, str]]:
             with btn_col1:
                 if st.button("💾 Save", key="_cal_save", type="primary", use_container_width=True):
                     if HOURS.index(end) > HOURS.index(start):
-                        availability[selected] = {"start": start, "end": end}
+                        availability[selected] = {
+                            "start": start,
+                            "end": end,
+                            "duration_min": _compute_duration_min(start, end),
+                        }
                         st.session_state["availability"] = availability
                         st.session_state["_cal_selected_day"] = None
                         st.rerun()
@@ -147,11 +160,14 @@ def render_calendar() -> dict[str, dict[str, str]]:
     if availability:
         st.markdown("---")
         st.caption("**Your training schedule:**")
-        summary_parts = [
-            f"**{day}** {v['start']} – {v['end']}"
-            for day in DAYS
-            if (v := availability.get(day))
-        ]
+        summary_parts = []
+        for day in DAYS:
+            v = availability.get(day)
+            if v:
+                dur = v.get("duration_min") or _compute_duration_min(v["start"], v["end"])
+                h, m = divmod(dur, 60)
+                dur_str = f"{h}h" + (f" {m}min" if m else "")
+                summary_parts.append(f"**{day}** {v['start']}\u2013{v['end']} *({dur_str})*")
         st.markdown(" &nbsp;|&nbsp; ".join(summary_parts))
     else:
         st.markdown("---")

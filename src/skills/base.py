@@ -109,36 +109,59 @@ def build_plan_context(
     availability: dict | None = None,
 ) -> str:
     """Build a formatted user message for training plan and next-session skills."""
+    _ALL_DAYS = [
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+    ]
+    sleep_h = float(plan_inputs.get("sleep_hours", 7.5))
+
     lines = [
         f"Athlete profile:\n{profile.to_context()}",
         f"Goal: {plan_inputs.get('goal', 'Not specified')}",
         f"Current fitness / experience: {plan_inputs.get('experience', 'Not specified')}",
-        f"Training days per week: {plan_inputs.get('days_per_week', 4)}",
-        f"Hours available per training day: {plan_inputs.get('hours_per_day', 1.5)}",
         f"Plan length: {plan_inputs.get('weeks', 4)} weeks",
-        f"Average sleep: {plan_inputs.get('sleep_hours', 7.5)} hours/night",
+        f"Average sleep: {sleep_h} hours/night",
     ]
     if plan_inputs.get("injuries"):
         lines.append(f"Injuries / limitations: {plan_inputs['injuries']}")
+
+    # Sleep deficit — trigger recovery-first behaviour
+    if sleep_h <= 6.0:
+        lines.append(
+            f"SLEEP DEFICIT: athlete averages only {sleep_h} h/night. "
+            "RECOVERY IS THE PRIORITY. Reduce intensity. "
+            "Avoid consecutive hard sessions. "
+            "Explicitly state that more sleep is more valuable than extra training."
+        )
+
+    # Calendar — single source of truth for training days / hours
     if availability:
-        avail_lines: list[str] = []
-        for day, val in availability.items():
+        training_days: list[str] = []
+        cal_lines: list[str] = []
+        for day in _ALL_DAYS:
+            val = availability.get(day)
             if not val:
                 continue
-            # New format: {"start": "HH:MM", "end": "HH:MM"}
-            if isinstance(val, dict):
-                avail_lines.append(
-                    f"  {day}: {val.get('start', '?')} – {val.get('end', '?')}"
+            if isinstance(val, dict) and val.get("start") and val.get("end"):
+                dur = val.get("duration_min")
+                if not dur:
+                    sh, sm = map(int, val["start"].split(":"))
+                    eh, em = map(int, val["end"].split(":"))
+                    dur = (eh * 60 + em) - (sh * 60 + sm)
+                cal_lines.append(
+                    f"  {day}: {val['start']}–{val['end']} "
+                    f"(max {dur} min — session duration MUST NOT exceed this)"
                 )
-            else:
-                # Legacy list format (e.g. ["Morning", "Evening"])
-                avail_lines.append(f"  {day}: {', '.join(val)}")
-        if avail_lines:
+                training_days.append(day)
+
+        if cal_lines:
+            rest_days = [d for d in _ALL_DAYS if d not in training_days]
             lines.append(
-                "Weekly training windows (AUTHORITATIVE — schedule sessions "
-                "only on these days, within these exact time slots):\n"
-                + "\n".join(avail_lines)
+                f"TRAINING SCHEDULE — {len(training_days)} day(s)/week "
+                "[HARD CONSTRAINT — DO NOT schedule outside these days/windows]:\n"
+                + "\n".join(cal_lines)
+                + (f"\nREST DAYS (zero sessions): {', '.join(rest_days)}" if rest_days else "")
             )
+
     if recent_summary and recent_summary.get("num_rides", 0) > 0:
         lines.append(
             f"\nRecent {recent_summary.get('days', 14)}-day training summary: "
