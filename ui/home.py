@@ -1,6 +1,5 @@
 """Home / landing page."""
 import streamlit as st
-# Імпортуємо нашу функцію кнопок (перевір правильність назви файлу components)
 from ui.components import render_disclaimer, render_sport_selector
 
 def render() -> None:
@@ -8,7 +7,6 @@ def render() -> None:
     st.title("Guiden")
     st.markdown("*Your personal AI endurance coach — powered by Strava.*")
     
-    # Виводимо три кнопки-прямокутники
     render_sport_selector("home")
     st.divider()
 
