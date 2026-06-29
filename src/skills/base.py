@@ -121,11 +121,18 @@ def build_plan_context(
     if plan_inputs.get("injuries"):
         lines.append(f"Injuries / limitations: {plan_inputs['injuries']}")
     if availability:
-        avail_lines = [
-            f"  {day}: {', '.join(slots)}"
-            for day, slots in availability.items()
-            if slots
-        ]
+        avail_lines: list[str] = []
+        for day, val in availability.items():
+            if not val:
+                continue
+            # New format: {"start": "HH:MM", "end": "HH:MM"}
+            if isinstance(val, dict):
+                avail_lines.append(
+                    f"  {day}: {val.get('start', '?')} – {val.get('end', '?')}"
+                )
+            else:
+                # Legacy list format (e.g. ["Morning", "Evening"])
+                avail_lines.append(f"  {day}: {', '.join(val)}")
         if avail_lines:
             lines.append("Weekly availability:\n" + "\n".join(avail_lines))
     if recent_summary and recent_summary.get("num_rides", 0) > 0:

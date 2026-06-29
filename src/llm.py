@@ -79,7 +79,7 @@ def chat(system: str, user: str, skill: str = "unknown") -> str:
 
     logger.info(
         f"[{skill}] tokens — prompt={prompt_tokens}, completion={completion_tokens}, "
-        f"total={total}, cost=${cost:.5f}"
+        f"total={total}, cost=${cost:.7f}"
     )
 
     # Accumulate in session state
