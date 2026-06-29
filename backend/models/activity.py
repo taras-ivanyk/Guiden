@@ -9,7 +9,7 @@ class LapResponse(BaseModel):
     lap_num: int
     distance_km: float
     time_min: float
-    avg_watts: Optional[int] = None
+    avg_watts: Optional[float] = None
     avg_hr: Optional[int] = None
     avg_speed_kmh: Optional[float] = None
 
@@ -21,9 +21,9 @@ class ActivitySummaryResponse(BaseModel):
     date: str
     distance_km: float
     moving_time_min: float
-    avg_hr: Optional[int] = None
-    max_hr: Optional[int] = None
-    avg_watts: Optional[int] = None
+    avg_hr: Optional[float] = None
+    max_hr: Optional[float] = None
+    avg_watts: Optional[float] = None
 
 
 class ActivityDetailResponse(ActivitySummaryResponse):
