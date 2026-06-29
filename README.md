@@ -87,9 +87,18 @@ Paste the output into your `.env`. Keep it secret — changing it invalidates al
 
 ### 3. Run
 
+**macOS / Linux**
 ```bash
-./scripts/dev.sh
+./scripts/dev_mac.sh
 ```
+
+**Windows (PowerShell)**
+```powershell
+.\scripts\dev_windows.ps1
+```
+
+> First time on Windows? Allow the script to run:
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
 
 Opens both servers. Press **Ctrl+C** to stop everything.
 
