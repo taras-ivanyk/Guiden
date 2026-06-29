@@ -1,4 +1,4 @@
-# Roadmap — AI Cycling Coach
+# Roadmap — Guiden
 
 ## Data Sources
 - [ ] **Garmin Connect** integration (native training data, HRV, sleep, Body Battery)
