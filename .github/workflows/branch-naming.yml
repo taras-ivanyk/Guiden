@@ -1,0 +1,20 @@
+name: Branch Naming Check
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+jobs:
+  check-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate branch name
+        run: |
+          BRANCH="${{ github.head_ref }}"
+          echo "Branch: $BRANCH"
+          if [[ ! "$BRANCH" =~ ^(feat|fix|docs|refactor|migrate)/.+ ]]; then
+            echo "Invalid branch name: $BRANCH"
+            echo "Must match: feat/, fix/, docs/, refactor/, migrate/"
+            exit 1
+          fi
+          echo "Branch name OK."

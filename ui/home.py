@@ -53,6 +53,7 @@ def render() -> None:
             "Pick **Analyze Workout** or **Training Plan** from the sidebar.",
             icon="✅",
         )
+<<<<<<< HEAD
         st.markdown(
             """
             | Race Prep | Phases your training toward a target event |
@@ -62,3 +63,5 @@ def render() -> None:
         )
 
     render_disclaimer()
+=======
+>>>>>>> origin/dev
