@@ -86,11 +86,15 @@ def render(profile: UserProfile) -> None:
             "injuries": plan_injuries or (profile.injuries or ""),
             "weeks": int(weeks),
         }
-        with st.spinner("Fetching recent training data…"):
-            try:
-                recent_summary = get_recent_summary(days=14)
-            except Exception:
-                recent_summary = {}
+        if st.session_state.get("demo_mode"):
+            from mock.mock_data import get_mock_recent_summary
+            recent_summary = get_mock_recent_summary()
+        else:
+            with st.spinner("Fetching recent training data…"):
+                try:
+                    recent_summary = get_recent_summary(days=14)
+                except Exception:
+                    recent_summary = {}
 
         if gen_next:
             with st.spinner("Generating next session recommendation…"):

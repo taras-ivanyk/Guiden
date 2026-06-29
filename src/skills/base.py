@@ -134,7 +134,11 @@ def build_plan_context(
                 # Legacy list format (e.g. ["Morning", "Evening"])
                 avail_lines.append(f"  {day}: {', '.join(val)}")
         if avail_lines:
-            lines.append("Weekly availability:\n" + "\n".join(avail_lines))
+            lines.append(
+                "Weekly training windows (AUTHORITATIVE — schedule sessions "
+                "only on these days, within these exact time slots):\n"
+                + "\n".join(avail_lines)
+            )
     if recent_summary and recent_summary.get("num_rides", 0) > 0:
         lines.append(
             f"\nRecent {recent_summary.get('days', 14)}-day training summary: "

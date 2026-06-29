@@ -80,6 +80,11 @@ def render_sidebar_profile() -> tuple[UserProfile, str]:
             ["🏠 Home", "🔍 Analyze Workout", "📅 Training Plan", "🏁 Race Prep ✦ beta"],
             label_visibility="collapsed",
         )
+        st.toggle(
+            "🎭 Demo mode",
+            key="demo_mode",
+            help="Pre-loaded mock Strava activity — no account needed. Great for demos.",
+        )
         st.divider()
 
         st.subheader("Your Profile")

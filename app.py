@@ -30,6 +30,7 @@ _DEFAULTS: dict = {
     "race_plan": None,
     "race_chat": [],
     "availability": {},
+    "demo_mode": False,
     "_session_tokens": 0,
     "_session_cost": 0.0,
     "_session_calls": 0,

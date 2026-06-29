@@ -8,7 +8,7 @@ load_dotenv()
 OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "openai.global.gpt-4o-mini")
 OPENAI_BASE_URL: str | None = os.getenv("OPENAI_BASE_URL") or None
 LLM_TEMPERATURE: float = float(os.getenv("LLM_TEMPERATURE", "0.4"))
-MAX_OUTPUT_TOKENS: int = int(os.getenv("MAX_OUTPUT_TOKENS", "1500"))
+MAX_OUTPUT_TOKENS: int = int(os.getenv("MAX_OUTPUT_TOKENS", "800"))
 
 # Cost per million tokens — gpt-4o-mini defaults
 COST_PER_M_INPUT: float = float(os.getenv("COST_PER_M_INPUT", "0.15"))
