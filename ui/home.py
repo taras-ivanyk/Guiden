@@ -1,11 +1,13 @@
 """Home / landing page."""
 import streamlit as st
-
+from ui.components import render_disclaimer, render_sport_selector
 
 def render() -> None:
     """Render the landing page."""
-    st.title("🚴 Guiden")
-    st.markdown("*Your personal cycling coach — powered by Strava & AI.*")
+    st.title("Guiden")
+    st.markdown("*Your personal AI endurance coach — powered by Strava.*")
+    
+    render_sport_selector("home")
     st.divider()
 
     c1, c2 = st.columns(2)
@@ -49,3 +51,12 @@ def render() -> None:
             "Pick **Analyze Workout** or **Training Plan** from the sidebar.",
             icon="✅",
         )
+        st.markdown(
+            """
+            | Race Prep | Phases your training toward a target event |
+
+            Every output is grounded in your actual data — the coach never invents numbers.
+            """
+        )
+
+    render_disclaimer()
