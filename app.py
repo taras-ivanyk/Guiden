@@ -61,8 +61,8 @@ profile = UserProfile(
 )
 
 # ── Sport selector ────────────────────────────────────────────────────────────────────
-render_sport_selector()
-st.divider()
+# render_sport_selector("app")
+# st.divider()
 
 # ── Route to page ────────────────────────────────────────────────────────────────────
 if mode == "🏠 Home":

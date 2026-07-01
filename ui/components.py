@@ -54,15 +54,15 @@ def render_disclaimer() -> None:
     )
 
 
-def render_sport_selector() -> None:
-    """Render the cycling-only sport selector row."""
+def render_sport_selector(page_name: str) -> None:
+    """Render the sport selector row with page-specific unique keys."""
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.button("🚴 Cycling", type="primary", use_container_width=True)
+        st.button("🚴 Cycling", type="primary", use_container_width=True, key=f"{page_name}_btn_cycling")
     with c2:
-        st.button("🏃 Running — coming soon", disabled=True, use_container_width=True)
+        st.button("🏃 Running — coming soon", disabled=True, use_container_width=True, key=f"{page_name}_btn_running")
     with c3:
-        st.button("🏊 Swimming — coming soon", disabled=True, use_container_width=True)
+        st.button("🏊 Swimming — coming soon", disabled=True, use_container_width=True, key=f"{page_name}_btn_swimming")
 
 
 def render_sidebar_profile() -> str:

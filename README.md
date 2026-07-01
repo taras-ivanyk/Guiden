@@ -5,10 +5,10 @@
 ---
 
 ## The Problem
-Most cyclists train without knowing *why* a session went well or badly. Was it the heat? Accumulated fatigue? Poor pacing? Without a coach, that context is lost.
+Most people train without a personal coach - no one to study their data, track their progress, or adjust their training plan. Whether your goal is to lose weight, run your first marathon, boost your cycling power, shave seconds off your swim splits, or simply feel stronger with every session, the right guidance makes all the difference. Most AI sports tools offer nothing more than a snapshot of a single workout, stripped of any real context. We offer something fundamentally different: an online platform powered by intelligent AI agents that analyze your runs, rides, and swims not as standalone events, but through the lens of your entire training history.
 
 ## The Solution
-An agentic AI coach that orchestrates multiple specialised skills — analysis, weather assessment, clarifying questions, and coaching synthesis — to explain exactly what happened in your ride and what to do next. Grounded in your real Strava data, never hallucinated.
+A multi-agent orchestration system built with LangGraph - **Guiden**. It moves beyond basic RAG by deploying specialized LLM skills (analysis, weather, inquiry, coaching) that maintain state, pause for human-in-the-loop feedback, and synthesize highly contextualized athletic guidance grounded entirely in verified Strava data.
 
 ---
 
@@ -88,7 +88,7 @@ Open `http://localhost:8501` in your browser.
 
 ## Configuration
 
-All settings are read from `.env` with safe defaults:
+`All settings are read from `.env` with safe defaults:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -105,85 +105,117 @@ All settings are read from `.env` with safe defaults:
 | `STRAVA_REFRESH_TOKEN` | — | Required. Get via `scripts/tools/oauth_setup.py` |
 | `TOP_K_ACTIVITIES` | `10` | How many recent activities to fetch by default |
 | `DEFAULT_WEEKS_AHEAD` | `4` | Default training plan length in weeks |
-| `LOG_LEVEL` | `INFO` | Logging verbosity (`DEBUG`, `INFO`, `WARNING`) |
+| `LOG_LEVEL` | `INFO` | Logging verbosity (`DEBUG`, `INFO`, `WARNING`) |`
 
 ---
 
 ## Architecture
 
-```
-Strava API ──────► activity data (laps, power, HR, GPS)
-                        │
-User profile ───────────┤  (age, FTP, goal, injuries, notes)
-                        │
-Open-Meteo ─────────────┤  (historical weather by GPS + date)
-                        │
-Weekly Calendar ─────────┤  (available days + time slots)
-                        ▼
-            LangGraph Orchestrator
-            ├─ analysis_skill     (workout type, deviations, summary)
-            ├─ weather_skill      (conditions + performance impact)
-            ├─ question_skill     (1-3 clarifying questions)
-            ├─ coaching_skill     (final synthesis + recommendation)
-            ├─ next_session_skill (next ride recommendation)
-            ├─ training_plan_skill (multi-week JSON plan)
-            ├─ expand_session_skill (on-demand day detail — lazy)
-            └─ race_prep_skill   (phased race preparation)
-                        │
-            Natural-language coaching output
+```mermaid
+graph TD
+    %% Задаємо стилі для блоків
+    classDef external fill:#f9f2f4,stroke:#d38e9d,stroke-width:2px;
+    classDef agent fill:#e1f5fe,stroke:#03a9f4,stroke-width:2px;
+    classDef output fill:#e8f5e9,stroke:#4caf50,stroke-width:2px;
+
+    %% Блок вхідних даних
+    subgraph Inputs [Data Inputs]
+        S[Strava API]:::external
+        U[User Profile]:::external
+        W[Open-Meteo]:::external
+        C[Weekly Calendar]:::external
+    end
+
+    %% Оркестратор та скіли
+    subgraph Orchestrator [LangGraph Orchestrator]
+        State((Coach State)):::agent
+        
+        A[analysis_skill]
+        WS[weather_skill]
+        Q[question_skill]
+        CS[coaching_skill]
+        NS[next_session_skill]
+        TP[training_plan_skill]
+        ES[expand_session_skill]
+        RP[race_prep_skill]
+
+        State --> A & WS & Q & CS & NS & TP & ES & RP
+    end
+
+    %% Зв'язки
+    S -- "activity data (laps, power, HR, GPS)" --> State
+    U -- "age, FTP, goal, injuries" --> State
+    W -- "historical weather" --> State
+    C -- "available days + time slots" --> State
+
+    %% Фінальний вивід
+    CS --> Out([Natural-language coaching output]):::output
+    NS --> Out
+    TP --> Out
+    ES --> Out
+    RP --> Out
 ```
 
 ---
 
 ## Project Structure
 
-```
-app.py                    # thin entry: routing between pages
-requirements.txt
-src/
-  config.py               # all env vars + defaults
-  logging_config.py       # logging setup
-  llm.py                  # central OpenAI wrapper (logs tokens/cost)
-  strava.py               # Strava API (incl. paginated date-range fetch)
-  weather.py              # Open-Meteo
-  profile.py              # UserProfile model + disclaimer
-  orchestrator.py         # routes to skill flows
-  skills/
-    __init__.py
-    base.py               # shared helpers + health condition detection
-    analysis.py
-    weather_skill.py
-    questions.py
-    coaching.py
-    next_session.py
-    training_plan.py
-    expand_session.py     # on-demand day detail
-    race_prep.py
-ui/
-  components.py           # CSS, sidebar, token counter
-  home.py                 # landing page
-  analyze.py              # workout analysis page
-  plan.py                 # training plan page
-  race.py                 # race prep page
-  calendar.py             # weekly availability grid
-prompts/
-  prompts.py              # all *_PROMPT constants
-scripts/
-  tools/
-    oauth_setup.py        # one-time Strava OAuth helper
-    test_strava.py        # Strava connectivity test
+```mermaid
+%%{init: {'theme': 'neutral'}}%%
+mindmap
+  root((Guiden
+  Repository))
+    app.py
+    requirements.txt
+    src((src))
+      config.py
+      logging_config.py
+      llm.py
+      strava.py
+      weather.py
+      profile.py
+      orchestrator.py
+      skills((skills))
+        base.py
+        analysis.py
+        weather_skill.py
+        questions.py
+        coaching.py
+        next_session.py
+        training_plan.py
+        expand_session.py
+        race_prep.py
+    ui((ui))
+      components.py
+      home.py
+      analyze.py
+      plan.py
+      race.py
+      calendar.py
+    prompts((prompts))
+      prompts.py
+    scripts((scripts))
+      tools((tools))
+        oauth_setup.py
+        test_strava.py
 ```
 
 ---
 
 ## Roadmap
-
-- [ ] Multi-sport support (running, swimming)
-- [ ] Training reminders / calendar notifications
-- [ ] Mobile-optimised layout
-- [ ] Garmin / Wahoo / Polar integrations
-- [ ] Segment analysis (KOM attempts, climb performance)
-- [ ] Long-term fitness tracking (CTL/ATL/TSB)
+``` mermaid
+timeline
+    title Guiden Product Roadmap
+    section Core Expansion
+        Multi-sport support : Running : Swimming
+        Mobile layout : Responsive UI optimisation
+    section Integrations
+        Hardware Sync : Garmin : Wahoo : Polar
+        Notifications : Training reminders : Calendar sync
+    section Deep Analytics
+        Segment Analysis : KOM attempts : Climb performance
+        Fitness Tracking : CTL / ATL / TSB metrics
+```
 
 ---
 
@@ -191,4 +223,3 @@ scripts/
 
 > ⚠️ This tool is AI-generated and for **informational purposes only**. It is **NOT medical advice**. Always consult a qualified coach or healthcare professional — especially if you have any health conditions — before making changes to your training.
 
----
