@@ -52,5 +52,40 @@
       "avg_hr": 144,
       "avg_speed_kmh": 21.1
     }
-  ]
+  ],
+  "weather": {
+    "temperature_c": 18,
+    "feels_like_c": 16,
+    "humidity_pct": 65,
+    "wind_speed_kmh": 14,
+    "wind_direction_deg": 315,
+    "wind_direction_label": "NW",
+    "precipitation_mm": 0.0,
+    "condition": "Partly cloudy",
+    "uv_index": 4
+  },
+  "planned_session": {
+    "name": "3\u00d720 min Threshold",
+    "target_duration_min": 130,
+    "target_distance_km": 60.0,
+    "target_avg_watts": 240,
+    "target_avg_hr": 158,
+    "intervals": [
+      {"lap_num": 2, "target_watts": 270, "target_hr": 168},
+      {"lap_num": 3, "target_watts": 270, "target_hr": 168},
+      {"lap_num": 4, "target_watts": 270, "target_hr": 168}
+    ]
+  },
+  "deviations": {
+    "duration_min":    {"planned": 130,  "actual": 138,  "delta": 8,   "pct": 6.2},
+    "distance_km":     {"planned": 60.0, "actual": 62.4, "delta": 2.4,  "pct": 4.0},
+    "avg_watts":       {"planned": 240,  "actual": 218,  "delta": -22,  "pct": -9.2},
+    "avg_hr":          {"planned": 158,  "actual": 152,  "delta": -6,   "pct": -3.8},
+    "interval_laps": [
+      {"lap_num": 2, "target_watts": 270, "actual_watts": 268, "delta_watts": -2,  "target_hr": 168, "actual_hr": 167, "delta_hr": -1},
+      {"lap_num": 3, "target_watts": 270, "actual_watts": 261, "delta_watts": -9,  "target_hr": 168, "actual_hr": 169, "delta_hr":  1},
+      {"lap_num": 4, "target_watts": 270, "actual_watts": 238, "delta_watts": -32, "target_hr": 168, "actual_hr": 165, "delta_hr": -3}
+    ],
+    "notes": "Clear power fade on rep 3 (\u221232 W vs target). Likely cause: poor sleep (5 h) prior night."
+  }
 }

@@ -35,3 +35,29 @@ def get_mock_recent_summary() -> dict:
         "avg_power": 207,
         "num_hard_sessions": 3,
     }
+
+
+def get_mock_weather() -> dict:
+    """Return weather conditions recorded during the mock activity.
+
+    Returns:
+        Dict with keys: temperature_c, feels_like_c, humidity_pct,
+        wind_speed_kmh, wind_direction_deg, wind_direction_label,
+        precipitation_mm, condition, uv_index.
+    """
+    return get_mock_activity()["weather"]
+
+
+def get_mock_plan_deviation() -> dict:
+    """Return planned session targets and actual deviations for the mock activity.
+
+    Returns:
+        Dict with keys:
+          - planned_session: name, targets, and per-interval targets.
+          - deviations: session-level and per-interval planned vs actual deltas.
+    """
+    activity = get_mock_activity()
+    return {
+        "planned_session": activity["planned_session"],
+        "deviations": activity["deviations"],
+    }
