@@ -162,6 +162,48 @@ def render(profile: UserProfile) -> None:
         m3.metric("Avg Power", f"{activity.get('avg_watts') or 'N/A'} W")
         m4.metric("Avg HR", f"{activity.get('avg_hr') or 'N/A'} bpm")
 
+        # ── Weather row ────────────────────────────────────────────────────────
+        weather_data = activity.get("weather")
+        if weather_data:
+            st.divider()
+            st.markdown("**🌡️ Weather During Ride**")
+            wc1, wc2, wc3, wc4 = st.columns(4)
+            temp = weather_data.get("temperature_c", "—")
+            feels = weather_data.get("feels_like_c", temp)
+            wc1.metric("Temperature", f"{temp}°C", delta=f"Feels like {feels}°C", delta_color="off")
+            wc2.metric("Humidity", f"{weather_data.get('humidity_pct', '—')}%")
+            wc3.metric("Wind", f"{weather_data.get('wind_speed_kmh', '—')} km/h {weather_data.get('wind_direction_label', '')}".strip())
+            wc4.metric("Conditions", weather_data.get("condition", "—"))
+
+        # ── Plan vs Actual deviations ──────────────────────────────────────────
+        deviations = activity.get("deviations")
+        if deviations:
+            st.divider()
+            st.markdown("**⚡ Plan vs Actual**")
+            pv1, pv2, pv3, pv4 = st.columns(4)
+            dw = deviations["avg_watts"]
+            dh = deviations["avg_hr"]
+            dd = deviations["distance_km"]
+            dt = deviations["duration_min"]
+            pv1.metric("Power", f"{dw['actual']} W", delta=f"{dw['delta']:+} W vs plan", delta_color="normal")
+            pv2.metric("Avg HR", f"{dh['actual']} bpm", delta=f"{dh['delta']:+} bpm vs plan", delta_color="off")
+            pv3.metric("Duration", f"{dt['actual']} min", delta=f"{dt['delta']:+} min vs plan", delta_color="off")
+            pv4.metric("Distance", f"{dd['actual']} km", delta=f"{dd['delta']:+} km vs plan", delta_color="off")
+            interval_laps = deviations.get("interval_laps", [])
+            if interval_laps:
+                rows = [{
+                    "Rep": f"Rep {lap['lap_num']}",
+                    "Target W": lap["target_watts"],
+                    "Actual W": lap["actual_watts"],
+                    "Δ Watts": f"{lap['delta_watts']:+}",
+                    "Target HR": lap["target_hr"],
+                    "Actual HR": lap["actual_hr"],
+                    "Δ HR": f"{lap['delta_hr']:+}",
+                } for lap in interval_laps]
+                st.dataframe(rows, use_container_width=True, hide_index=True)
+            if deviations.get("notes"):
+                st.caption(f"📝 {deviations['notes']}")
+
         # Summary bullets (default view — concise)
         analysis = state.get("analysis", {})
         if analysis.get("summary"):

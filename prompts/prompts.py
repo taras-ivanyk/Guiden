@@ -13,13 +13,16 @@ ANALYSIS_PROMPT = (
     "SUMMARY: 3-5 one-line bullets\n"
     "STRUCTURE: session type + structure (1-2 sentences)\n"
     "OBSERVATIONS: notable patterns (2-3 bullets)\n"
-    "DEVIATIONS: anything unexpected (bullets or 'None')"
+    "DEVIATIONS: if planned targets are provided, compare actual vs plan per metric and per interval; "
+    "explain the root cause (reference weather temperature when relevant, e.g. heat → elevated HR, reduced power); "
+    "otherwise infer from lap data. Bullets or 'None'."
 )
 
 # ── Weather impact ────────────────────────────────────────────────────────────
 WEATHER_PROMPT = (
     "Cycling coach. 2-4 sentences: how did today's weather affect performance? "
-    "Cite specific thresholds (e.g. >25 °C → ~5-8 % power drop). "
+    "Cite specific thresholds: >25 °C → ~5-8 % power drop; >35 °C → 10-15 % power drop "
+    "and significantly elevated HR due to thermoregulation (blood diverted to skin cooling). "
     "No weather data? One sentence. No padding."
 )
 

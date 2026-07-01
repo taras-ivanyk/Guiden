@@ -32,6 +32,34 @@ def analysis_skill(activity: dict, profile: UserProfile) -> dict:
         + health_block(profile.injuries or "")
     )
 
+    if activity.get("weather"):
+        w = activity["weather"]
+        user_msg += (
+            f"\n\nWeather during ride: {w['temperature_c']}°C "
+            f"(feels like {w.get('feels_like_c', w['temperature_c'])}°C), "
+            f"humidity {w['humidity_pct']}%, wind {w['wind_speed_kmh']} km/h\n"
+        )
+
+    plan = activity.get("planned_session")
+    devs = activity.get("deviations")
+    if plan and devs:
+        user_msg += (
+            f"\nPlanned session: {plan.get('name')} — "
+            f"targets {plan['target_avg_watts']}W / {plan['target_avg_hr']} bpm\n"
+            f"Actual vs plan: "
+            f"Power {devs['avg_watts']['actual']}W (target {devs['avg_watts']['planned']}W, "
+            f"{devs['avg_watts']['delta']:+}W), "
+            f"HR {devs['avg_hr']['actual']} bpm (target {devs['avg_hr']['planned']} bpm, "
+            f"{devs['avg_hr']['delta']:+} bpm)\n"
+            "Per-interval:\n"
+        )
+        for lap in devs.get("interval_laps", []):
+            user_msg += (
+                f"  Rep {lap['lap_num']}: "
+                f"{lap['actual_watts']}W vs {lap['target_watts']}W ({lap['delta_watts']:+}W), "
+                f"HR {lap['actual_hr']} vs {lap['target_hr']} ({lap['delta_hr']:+})\n"
+            )
+
     response = chat(ANALYSIS_PROMPT, user_msg, skill="analysis")
 
     summary_raw, structure, observations, deviations = parse_sections(

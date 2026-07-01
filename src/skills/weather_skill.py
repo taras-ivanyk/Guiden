@@ -20,17 +20,25 @@ def weather_skill(activity: dict) -> dict:
     latlng = activity.get("start_latlng")
     date = activity.get("date")
     raw_data: Optional[dict] = None
+    embedded = activity.get("weather")
 
-    if latlng and len(latlng) == 2 and date:
+    if embedded:
+        raw_data = {
+            "avg_temp_c": embedded["temperature_c"],
+            "max_temp_c": embedded["temperature_c"],
+            "avg_humidity": embedded["humidity_pct"],
+            "avg_wind_kmh": embedded["wind_speed_kmh"],
+        }
+    elif latlng and len(latlng) == 2 and date:
         logger.info(
             f"[weather_skill] Open-Meteo API → lat={latlng[0]}, lon={latlng[1]}, date={date}"
         )
         raw_data = get_weather(latlng[0], latlng[1], date)
 
     if raw_data:
+        feels = embedded.get("feels_like_c", raw_data["avg_temp_c"]) if embedded else raw_data.get("avg_temp_c")
         conditions_text = (
-            f"Temperature: {raw_data.get('avg_temp_c')}°C avg / "
-            f"{raw_data.get('max_temp_c')}°C max\n"
+            f"Temperature: {raw_data.get('avg_temp_c')}°C (feels like {feels}°C)\n"
             f"Humidity: {raw_data.get('avg_humidity')}%\n"
             f"Wind: {raw_data.get('avg_wind_kmh')} km/h"
         )
